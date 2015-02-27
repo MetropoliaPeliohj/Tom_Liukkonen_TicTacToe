@@ -63,9 +63,8 @@ public:
 	void T(int i);	// Tilasiirtymäfunktio.
 
 	// TOOMAKSEN FUNKTIOT
-	std::vector<short> testRow(short row, short botOrPlayer);
-	std::vector<short> testLineDown(short line, short botOrPlayer);
-	int testPossibleMoves();
+	std::vector<short> TestNextMove(short rowOrLine, short botOrPlayer, short type);
+	int testPossibleMoves(short botOrPlayer);
 };
 
 class State : public S

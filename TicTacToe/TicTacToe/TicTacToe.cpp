@@ -83,7 +83,11 @@ int S::X()
 	}
 
 	// Checking here
-	int possibleMove = testPossibleMoves();
+	int possibleMove = testPossibleMoves(0); // Checking bot
+	if (possibleMove != -1) return possibleMove;
+
+	possibleMove = testPossibleMoves(1); // Checking player
+	if (possibleMove != -1) return possibleMove;
 
 	int paikka;
 	if (count == 0 || p[0] + p[1] >= 0) {
@@ -97,89 +101,147 @@ int S::X()
 	return paikka;
 }
 
-int S::testPossibleMoves()
+/**
+*	This function checks for possible critic situations. 
+*	Not using trees
+*/
+int S::testPossibleMoves(short botOrPlayer)
 {
 	int move = -1;
+	short index;
 
 	// Testing if we have a row.
-	std::vector<short> botRow = testRow(0, 0); // First row
-	if (botRow.size() != 0) {}// do something
+	std::vector<short> botRow;
+	
+	for (index = 0; index < 3; index++)
+	{
+		botRow = TestNextMove(index, botOrPlayer, 0); // Test row
+		if (botRow.size() != 0) return botRow[0] * 3 + botRow[1];
+	}
 
-	botRow = testRow(1, 0); // Second row
-	if (botRow.size() != 0) {}// do something
+	for (index = 0; index < 3; index++)
+	{
+		botRow = TestNextMove(index, botOrPlayer, 1); // Test line
+		if (botRow.size() != 0) return botRow[0] * 3 + botRow[1];
+	}
 
-	botRow = testRow(2, 0); // Third row
-	if (botRow.size() != 0) {}// do something
+	botRow = TestNextMove(index, botOrPlayer, 2); // Test titled from upper left to lower right 
+	if (botRow.size() != 0) return botRow[0] * 3 + botRow[1];
+
+	botRow = TestNextMove(index, botOrPlayer, 3); // titled from lower left to upped right
+	if (botRow.size() != 0) return botRow[0] * 3 + botRow[1];
+
 
 	return move;
 }
 
+
+
 /**
-*	Testing specific row for the possibility to win. Row: goes from left to right
+*	Testing for the possibility to win. Row: goes from left to right, line: up down
 *	Params:
-*		short row: row to test - 0,1,2
+*		short rowOrLine: row or line to test - 0,1,2
 *		byte botOrPlayer: 0-bot, 1-player
+*		short type: 0- rows, 1- lines, 2- titled from upper left to lower right, 3- titled from lower left to upped right
 */
-std::vector<short> S::testRow(short row, short botOrPlayer)
+std::vector<short> S::TestNextMove(short rowOrLine, short botOrPlayer, short type)
 {
 	std::vector<short> position;
 
 	short player = (botOrPlayer == 0) ? (short)PLAYER_X : (short)PLAYER_O;
-	short rowFirstPosition = GetB(row, 0);
-	short rowSecondPosition = GetB(row, 1);
-	short rowThirdPosition = GetB(row, 2);
+	short firstPosition;
+	short secondPosition;
+	short thirdPosition;
 
-	if (rowFirstPosition == player && rowSecondPosition == player && rowThirdPosition == EMPTY
-		|| rowFirstPosition == player && rowSecondPosition == EMPTY && rowThirdPosition == player
-		|| rowFirstPosition == EMPTY && rowSecondPosition == player && rowThirdPosition == player)
+	if (type == 0) // rows
 	{
-		if (rowFirstPosition == EMPTY)
-		{
-			position.push_back(row); position.push_back(0);
-		}
-		else if (rowSecondPosition == EMPTY)
-		{
-			position.push_back(row); position.push_back(1);
-		}
-		else if (rowThirdPosition == EMPTY)
-		{
-			position.push_back(row); position.push_back(2);
-		}
+		firstPosition = GetB(rowOrLine, 0);
+		secondPosition = GetB(rowOrLine, 1);
+		thirdPosition = GetB(rowOrLine, 2);
+	}
+	else if (type == 1) // lines
+	{
+		firstPosition = GetB(0, rowOrLine);
+		secondPosition = GetB(1, rowOrLine);
+		thirdPosition = GetB(2, rowOrLine);
+	}
+	else if (type == 2) // titled from upper left to lower right
+	{
+		firstPosition = GetB(0, 0);
+		secondPosition = GetB(1, 1);
+		thirdPosition = GetB(2, 2);
+	}
+	else if (type == 3) // titled from lower left to upped right
+	{
+		firstPosition = GetB(2, 0);
+		secondPosition = GetB(1, 1);
+		thirdPosition = GetB(0, 2);
+	}
+	else
+	{
+		return position;
 	}
 
-	return position;
-}
-
-/**
-*	Testing specific line for the possibility to win. Line: goes from up to down
-*	Params:
-*		short row: row to test - 0,1,2
-*		byte botOrPlayer: 0-bot, 1-player
-*/
-std::vector<short> S::testLineDown(short line, short botOrPlayer)
-{
-	std::vector<short> position;
-
-	short player = (botOrPlayer == 0) ? (short)PLAYER_X : (short)PLAYER_O;
-	short lineFirstPosition = GetB(0, line);
-	short lineSecondPosition = GetB(1, line);
-	short lineThirdPosition = GetB(2, line);
-
-	if (lineFirstPosition == player && lineSecondPosition == player && lineThirdPosition == EMPTY
-		|| lineFirstPosition == player && lineSecondPosition == EMPTY && lineThirdPosition == player
-		|| lineFirstPosition == EMPTY && lineSecondPosition == player && lineThirdPosition == player)
+	if (firstPosition == player && secondPosition == player && thirdPosition == EMPTY
+		|| firstPosition == player && secondPosition == EMPTY && thirdPosition == player
+		|| firstPosition == EMPTY && secondPosition == player && thirdPosition == player)
 	{
-		if (lineFirstPosition == EMPTY)
+		if (firstPosition == EMPTY)
 		{
-			position.push_back(0); position.push_back(line);
+			if (type == 0) // Rows
+			{
+				position.push_back(rowOrLine); position.push_back(0);
+			}
+			else if (type == 1) // lines
+			{
+				position.push_back(0); position.push_back(rowOrLine);
+			}
+			else if (type == 2) // titled from upper left to lower right
+			{
+				position.push_back(0); position.push_back(0);
+			}
+			else if (type == 3) // titled from lower left to upped right
+			{
+				position.push_back(2); position.push_back(0);
+			}
 		}
-		else if (lineSecondPosition == EMPTY)
+		else if (secondPosition == EMPTY)
 		{
-			position.push_back(1); position.push_back(line);
+			if (type == 0) // rows
+			{
+				position.push_back(rowOrLine); position.push_back(1);
+			}
+			else if (type == 1) // lines
+			{
+				position.push_back(1); position.push_back(rowOrLine);
+			}
+			else if (type == 2) // titled from upper left to lower right
+			{
+				position.push_back(1); position.push_back(1);
+			}
+			else if (type == 3) // titled from lower left to upped right
+			{
+				position.push_back(1); position.push_back(1);
+			}
 		}
-		else if (lineThirdPosition == EMPTY)
+		else if (thirdPosition == EMPTY)
 		{
-			position.push_back(2); position.push_back(line);
+			if (type == 0) // rows
+			{
+				position.push_back(rowOrLine); position.push_back(2);
+			}
+			else if (type == 1) // lines
+			{
+				position.push_back(2); position.push_back(rowOrLine);
+			}
+			else if (type == 2) // titled from upper left to lower right
+			{
+				position.push_back(2); position.push_back(2);
+			}
+			else if (type == 3) // titled from lower left to upped right
+			{
+				position.push_back(0); position.push_back(2);
+			}
 		}
 	}
 
